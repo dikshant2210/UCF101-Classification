@@ -112,7 +112,6 @@ out
 gen
 
 # Author added files and directories
-data/test
-data/train
-data/validation
-data/UCF-101
+data/
+model/number_examples.pkl
+model/number_of_frames.pkl

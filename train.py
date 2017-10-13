@@ -2,12 +2,15 @@ import pandas as pd
 import pickle as pkl
 import numpy as np
 from model.sequential_models import lstm_model
+from sklearn.utils import shuffle
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 
 
 batch_size = 32
-epochs = 5
+epochs = 50
 
 train = pd.read_csv('data/train.csv', names=('path', 'category'))
+train = shuffle(train)
 validation = pd.read_csv('data/validation.csv', names=('path', 'category'))
 test = pd.read_csv('data/test.csv', names=('path', 'category'))
 
@@ -64,9 +67,28 @@ def valid_generator():
 model = lstm_model()
 print(model.summary())
 
+callbacks = [EarlyStopping(monitor='accuracy',
+                           patience=8,
+                           verbose=1,
+                           min_delta=1e-4,
+                           mode='max'),
+             ReduceLROnPlateau(monitor='accuracy',
+                               factor=0.1,
+                               patience=4,
+                               verbose=1,
+                               epsilon=1e-4,
+                               mode='max'),
+             ModelCheckpoint(monitor='accuracy',
+                             filepath='weights/best_weights.hdf5',
+                             save_best_only=True,
+                             save_weights_only=True,
+                             mode='max'),
+             TensorBoard(log_dir='logs')]
+
 model.fit_generator(generator=train_generator(),
                     steps_per_epoch=np.ceil(float(len(train)) / float(batch_size)),
                     epochs=epochs,
+                    callbacks=callbacks,
                     verbose=1,
                     validation_data=valid_generator(),
                     validation_steps=np.ceil(float(len(validation)) / float(batch_size)))
